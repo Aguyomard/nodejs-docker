@@ -11,4 +11,18 @@ services:
     environment:
       - NODE_ENV=development
       - CHOKIDAR_USEPOLLING=true
-    command: ['nodemon', '--legacy-watch', 'server.js']
+    command:
+      ['nodemon', '--ext', 'ts', '--exec', 'npx ts-node', 'src/server.ts']
+
+  mongo:
+    image: mongo:6
+    restart: always
+    ports:
+      - '27017:27017'
+    volumes:
+      - mongo-data:/data/db
+    environment:
+      MONGO_INITDB_DATABASE: mydatabase
+
+volumes:
+  mongo-data:
