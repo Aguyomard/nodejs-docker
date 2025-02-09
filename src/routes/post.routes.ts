@@ -1,9 +1,9 @@
-// import express from 'express'
+import express from 'express'
 
-// const router = express.Router()
+const router = express.Router()
 
-// router.get('/get', (req, res) => {
-//   res.json({ message: 'ok' })
-// })
+router.get('/', (req, res) => {
+  res.json({ message: 'ok' })
+})
 
-// export default router
+export default router
