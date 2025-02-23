@@ -1,25 +1,21 @@
 import express from 'express'
+import { PostController } from '../controller/post.controller.js'
 
 const router = express.Router()
 
-router.get('/', (req, res) => {
-  res.json({ message: 'ok' })
-})
+// Récupérer tous les posts
+router.get('/', (req, res) => PostController.getAllPosts(req, res))
 
-router.post('/', (req, res) => {
-  res.json({ message: req.body.test })
-})
+// Créer un nouveau post
+router.post('/', (req, res) => PostController.createPost(req, res))
 
-router.put('/:id', (req, res) => {
-  res.json({ message: req.params.id })
-})
+// Mettre à jour un post (remplacement complet)
+router.put('/:id', (req, res) => PostController.updatePost(req, res))
 
-router.delete('/:id', (req, res) => {
-  res.json({ message: req.params.id })
-})
+// Modifier partiellement un post (mise à jour partielle)
+router.patch('/:id', (req, res) => PostController.updatePost(req, res))
 
-router.patch('/:id', (req, res) => {
-  res.json({ message: req.params.id })
-})
+// Supprimer un post
+router.delete('/:id', (req, res) => PostController.deletePost(req, res))
 
 export default router
