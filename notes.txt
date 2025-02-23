@@ -1,2 +1,2 @@
-docker exec -it <container_id> mongosh
+docker exec -it nodejs-docker-test-mongo-1 mongosh
 show dbs
