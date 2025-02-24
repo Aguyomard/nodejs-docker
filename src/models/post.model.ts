@@ -1,6 +1,6 @@
 import { Schema, model, Document } from 'mongoose'
 
-interface IPost extends Document {
+export interface IPost extends Document {
   message: string
   author: string
   likers: string[]

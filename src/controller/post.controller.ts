@@ -1,5 +1,6 @@
 import { Request, Response } from 'express'
 import { PostModel } from '../models/post.model.js'
+import { type IPost } from '../models/post.model.js'
 
 export class PostController {
   // Récupérer tous les posts
@@ -38,8 +39,14 @@ export class PostController {
   static async updatePost(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params
-      const updatedPost = await PostModel.findByIdAndUpdate(id, req.body, {
+
+      // Filtrer uniquement les champs autorisés
+      const { message, author, likers } = req.body
+      const updateData: Partial<IPost> = { message, author, likers }
+
+      const updatedPost = await PostModel.findByIdAndUpdate(id, updateData, {
         new: true,
+        runValidators: true, // ✅ Active la validation du modèle Mongoose
       })
 
       if (!updatedPost) {
@@ -66,7 +73,9 @@ export class PostController {
 
       res.status(200).json({ message: 'Post supprimé avec succès' })
     } catch (error) {
-      res.status(500).json({ error: 'Erreur lors de la suppression du post' })
+      res
+        .status(500)
+        .json({ error: 'Erreur lors de la suppression du post' + error })
     }
   }
 }
