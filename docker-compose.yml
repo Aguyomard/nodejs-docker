@@ -8,15 +8,7 @@ services:
       - /app/node_modules
     env_file:
       - .env
-    command:
-      [
-        'nodemon',
-        '--ext',
-        'ts',
-        '--exec',
-        'node --loader ts-node/esm',
-        'src/server.ts',
-      ]
+    command: ['nodemon', '--ext', 'ts', '--exec', 'tsx', 'src/server.ts']
 
   mongo:
     image: mongo:6
