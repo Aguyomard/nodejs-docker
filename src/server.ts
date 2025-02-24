@@ -3,6 +3,8 @@ dotenv.config()
 
 import express, { Request, Response } from 'express'
 import postRoutes from './routes/post.routes.js'
+import authRouter from './routes/authRouter.js'
+
 import connectDB from './config/db.js'
 import cors from 'cors'
 import helmet from 'helmet'
@@ -24,6 +26,7 @@ app.get('/test', (req: Request, res: Response) => {
 })
 
 app.use('/post', postRoutes)
+app.use('/api/auth', authRouter)
 
 // Fonction pour démarrer le serveur après la connexion à MongoDB
 const startServer = async () => {
