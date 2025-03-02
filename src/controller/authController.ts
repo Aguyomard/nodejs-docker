@@ -1,8 +1,8 @@
-import exp from 'constants'
 import { signinSchema, signupSchema } from '../middlewares/validator.js'
 import { UserModel } from '../models/usersModel.js'
 import { doHashing, compareHash } from '../utils/hashing.js'
 import jwt from 'jsonwebtoken'
+import { sendMail } from '../utils/sendMail.js'
 
 export class AuthController {
   static async signup(req, res) {
@@ -97,6 +97,59 @@ export class AuthController {
       })
     } catch (error) {
       res.status(500).json({ error: 'Erreur lors de la connexion' })
+    }
+  }
+
+  static signout = (req, res) => {
+    res
+      .clearCookie('Authorization')
+      .status(200)
+      .json({ message: 'Déconnexion réussie' })
+  }
+
+  static sendVerificationCode = async (req, res) => {
+    try {
+      const { email } = req.body
+
+      const user = await UserModel.findOne({ email })
+        .select('+verificationCode')
+        .select('+verified')
+
+      if (!user) {
+        res.status(404).json({ error: 'Utilisateur non trouvé' })
+        return
+      }
+
+      if (user.verified) {
+        res.status(400).json({ error: 'Utilisateur déjà vérifié' })
+        return
+      }
+
+      // Générer un code aléatoire
+      const verificationCode = Math.floor(100000 + Math.random() * 900000)
+
+      // Enregistrer le code dans la base de données
+      await UserModel.findByIdAndUpdate(
+        user._id,
+        { verificationCode },
+        { runValidators: true }
+      )
+
+      // Envoyer le code par email (non implémenté)
+      console.log('Code de vérification :', verificationCode)
+
+      res.status(200).json({ message: 'Code envoyé avec succès' })
+    } catch (error) {
+      res.status(500).json({ error: 'Erreur lors de l’envoi du code' })
+    }
+  }
+
+  static mail = async (req, res) => {
+    try {
+      sendMail('alecloic@msn.com', 'Test', 'Test')
+      res.status(200).json({ message: 'Email envoyé avec succès' })
+    } catch (error) {
+      res.status(500).json({ error: 'Erreur lors de l’envoi du code' })
     }
   }
 }
