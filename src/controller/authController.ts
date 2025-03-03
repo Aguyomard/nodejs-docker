@@ -2,7 +2,6 @@ import { signinSchema, signupSchema } from '../middlewares/validator.js'
 import { UserModel } from '../models/usersModel.js'
 import { doHashing, compareHash } from '../utils/hashing.js'
 import jwt from 'jsonwebtoken'
-import { sendMail } from '../utils/sendMail.js'
 
 export class AuthController {
   static async signup(req, res) {
@@ -139,15 +138,6 @@ export class AuthController {
       console.log('Code de vérification :', verificationCode)
 
       res.status(200).json({ message: 'Code envoyé avec succès' })
-    } catch (error) {
-      res.status(500).json({ error: 'Erreur lors de l’envoi du code' })
-    }
-  }
-
-  static mail = async (req, res) => {
-    try {
-      sendMail('alecloic@msn.com', 'Test', 'Test')
-      res.status(200).json({ message: 'Email envoyé avec succès' })
     } catch (error) {
       res.status(500).json({ error: 'Erreur lors de l’envoi du code' })
     }

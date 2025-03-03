@@ -10,7 +10,6 @@ const mailController = new MailController(mailService)
 router.post('/signup', (req, res) => AuthController.signup(req, res))
 router.get('/signin', (req, res) => AuthController.signin(req, res))
 router.get('/signout', (req, res) => AuthController.signin(req, res))
-router.get('/mail', (req, res) => AuthController.mail(req, res))
 router.get('/send-email', mailController.sendEmail)
 
 export default router
