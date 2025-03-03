@@ -1,10 +1,13 @@
 import { signinSchema, signupSchema } from '../middlewares/validator.js'
 import { UserModel } from '../models/usersModel.js'
-import { doHashing, compareHash } from '../utils/hashing.js'
+import { MailService } from '../services/MailService.js'
+import { doHashing, compareHash, hmacHashing } from '../utils/hashing.js'
 import jwt from 'jsonwebtoken'
 
 export class AuthController {
-  static async signup(req, res) {
+  constructor(private mailService: MailService) {}
+
+  async signup(req, res) {
     try {
       const { email, password } = req.body
       const { error } = signupSchema.validate({ email, password })
@@ -43,7 +46,7 @@ export class AuthController {
     }
   }
 
-  static signin = async (req, res) => {
+  signin = async (req, res) => {
     try {
       const { email, password } = req.body
       const { error } = signinSchema.validate({ email, password })
@@ -99,14 +102,14 @@ export class AuthController {
     }
   }
 
-  static signout = (req, res) => {
+  signout = async (req, res) => {
     res
       .clearCookie('Authorization')
       .status(200)
       .json({ message: 'Déconnexion réussie' })
   }
 
-  static sendVerificationCode = async (req, res) => {
+  sendVerificationCode = async (req, res) => {
     try {
       const { email } = req.body
 
@@ -127,18 +130,30 @@ export class AuthController {
       // Générer un code aléatoire
       const verificationCode = Math.floor(100000 + Math.random() * 900000)
 
-      // Enregistrer le code dans la base de données
-      await UserModel.findByIdAndUpdate(
-        user._id,
-        { verificationCode },
-        { runValidators: true }
+      console.log('Code de vérification :', verificationCode)
+
+      // ✅ Envoyer le code par email avec `MailService`
+      // await this.mailService.sendMail(
+      //   user.email,
+      //   'Votre code de vérification',
+      //   `Bonjour,\n\nVotre code de vérification est : ${verificationCode}`
+      // )
+
+      const hashedCodeValue = await hmacHashing(
+        verificationCode.toString(),
+        process.env.HMAC_KEY
       )
 
-      // Envoyer le code par email (non implémenté)
-      console.log('Code de vérification :', verificationCode)
+      // ✅ Enregistrer le code dans la base de données
+      await UserModel.findByIdAndUpdate(
+        user._id,
+        { verificationCode: hashedCodeValue },
+        { verificationCodeValidation: Date.now() }
+      )
 
       res.status(200).json({ message: 'Code envoyé avec succès' })
     } catch (error) {
+      console.log(error)
       res.status(500).json({ error: 'Erreur lors de l’envoi du code' })
     }
   }

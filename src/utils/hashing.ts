@@ -1,4 +1,5 @@
 import bcrypt from 'bcryptjs'
+import crypto from 'crypto'
 
 export async function doHashing(password: string): Promise<string> {
   try {
@@ -18,5 +19,14 @@ export async function compareHash(
   } catch (error) {
     console.error('Erreur lors de la comparaison :', error)
     throw new Error('Impossible de comparer les mots de passe')
+  }
+}
+
+export async function hmacHashing(value: string, key: string): Promise<string> {
+  try {
+    return crypto.createHmac('sha256', key).update(value).digest('hex')
+  } catch (error) {
+    console.error('Erreur lors du hashage HMAC :', error)
+    throw new Error('Impossible de générer le hash HMAC')
   }
 }

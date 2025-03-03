@@ -6,10 +6,11 @@ import { mailService } from '../config/dependencies.js'
 const router = express.Router()
 
 const mailController = new MailController(mailService)
+const authController = new AuthController(mailService)
 
-router.post('/signup', (req, res) => AuthController.signup(req, res))
-router.get('/signin', (req, res) => AuthController.signin(req, res))
-router.get('/signout', (req, res) => AuthController.signin(req, res))
+router.post('/signup', (req, res) => authController.signup(req, res))
+router.get('/signin', (req, res) => authController.signin(req, res))
+router.get('/signout', (req, res) => authController.signout(req, res))
 router.get('/send-email', mailController.sendEmail)
-
+router.patch('/verify-code', authController.sendVerificationCode)
 export default router
