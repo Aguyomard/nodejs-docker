@@ -3,7 +3,6 @@ import { PostModel } from '../models/post.model.js'
 import { type IPost } from '../models/post.model.js'
 
 export class PostController {
-  // Récupérer tous les posts
   static async getAllPosts(req: Request, res: Response): Promise<void> {
     try {
       const posts = await PostModel.find()
@@ -15,7 +14,6 @@ export class PostController {
     }
   }
 
-  // Créer un post
   static async createPost(req: Request, res: Response): Promise<void> {
     try {
       const { message, author, likers } = req.body
@@ -35,18 +33,16 @@ export class PostController {
     }
   }
 
-  // Mettre à jour un post
   static async updatePost(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params
 
-      // Filtrer uniquement les champs autorisés
       const { message, author, likers } = req.body
       const updateData: Partial<IPost> = { message, author, likers }
 
       const updatedPost = await PostModel.findByIdAndUpdate(id, updateData, {
         new: true,
-        runValidators: true, // ✅ Active la validation du modèle Mongoose
+        runValidators: true,
       })
 
       if (!updatedPost) {
@@ -60,7 +56,6 @@ export class PostController {
     }
   }
 
-  // Supprimer un post
   static async deletePost(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params

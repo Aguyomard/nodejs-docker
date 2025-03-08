@@ -42,6 +42,7 @@ export class AuthController {
         message: 'Utilisateur créé avec succès',
       })
     } catch (error) {
+      console.log(error)
       next(new AppError('Erreur lors de la création de l’utilisateur', 500))
     }
   }
@@ -74,7 +75,6 @@ export class AuthController {
       res.cookie('Authorization', token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'Strict',
         expires: new Date(Date.now() + 3600000),
       })
 
@@ -85,6 +85,7 @@ export class AuthController {
         token,
       })
     } catch (error) {
+      console.log(error)
       next(new AppError('Erreur lors de la connexion', 500))
     }
   }
@@ -96,6 +97,7 @@ export class AuthController {
         .status(200)
         .json({ message: 'Déconnexion réussie' })
     } catch (error) {
+      console.log(error)
       next(new AppError('Erreur lors de la déconnexion', 500))
     }
   }
@@ -138,6 +140,7 @@ export class AuthController {
 
       res.status(200).json({ message: 'Code envoyé avec succès' })
     } catch (error) {
+      console.log(error)
       next(new AppError('Erreur lors de l’envoi du code', 500))
     }
   }
@@ -192,6 +195,7 @@ export class AuthController {
 
       res.status(200).json({ message: 'Utilisateur vérifié avec succès' })
     } catch (error) {
+      console.log(error)
       next(new AppError('Erreur lors de la vérification du code', 500))
     }
   }

@@ -1,8 +1,5 @@
 import { Request, Response, NextFunction } from 'express'
 
-/**
- * Classe personnalisée pour gérer les erreurs avec un statut HTTP
- */
 export class AppError extends Error {
   statusCode: number
 
@@ -12,9 +9,6 @@ export class AppError extends Error {
   }
 }
 
-/**
- * Middleware global de gestion des erreurs
- */
 export const errorHandler = (
   err: AppError,
   req: Request,
