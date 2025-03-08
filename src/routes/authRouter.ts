@@ -13,4 +13,6 @@ router.get('/signin', (req, res) => authController.signin(req, res))
 router.get('/signout', (req, res) => authController.signout(req, res))
 router.get('/send-email', mailController.sendEmail)
 router.patch('/verify-code', authController.sendVerificationCode)
+router.patch('/verify-verification-code', authController.verifyVerificationCode)
+
 export default router

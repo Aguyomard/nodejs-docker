@@ -5,7 +5,7 @@ interface IUser extends Document {
   password: string
   verified?: boolean
   verificationCode?: string
-  verificationCodeValidation?: string
+  verificationCodeValidationDate?: Date
   forgotPasswordCode?: string
   createdAt?: Date
   updatedAt?: Date
@@ -35,8 +35,8 @@ const userSchema = new Schema<IUser>(
       type: String,
       select: false,
     },
-    verificationCodeValidation: {
-      type: String,
+    verificationCodeValidationDate: {
+      type: Date,
       select: false,
     },
     forgotPasswordCode: {

@@ -30,3 +30,17 @@ export async function hmacHashing(value: string, key: string): Promise<string> {
     throw new Error('Impossible de générer le hash HMAC')
   }
 }
+
+export async function hmacCompare(
+  value: string,
+  hash: string,
+  key: string
+): Promise<boolean> {
+  try {
+    const generatedHash = await hmacHashing(value, key)
+    return hash === generatedHash
+  } catch (error) {
+    console.error('Erreur lors de la comparaison HMAC :', error)
+    throw new Error('Impossible de comparer les hash HMAC')
+  }
+}

@@ -1,7 +1,16 @@
-import { signinSchema, signupSchema } from '../middlewares/validator.js'
+import {
+  acceptCodeSchema,
+  signinSchema,
+  signupSchema,
+} from '../middlewares/validator.js'
 import { UserModel } from '../models/usersModel.js'
 import { MailService } from '../services/MailService.js'
-import { doHashing, compareHash, hmacHashing } from '../utils/hashing.js'
+import {
+  doHashing,
+  compareHash,
+  hmacHashing,
+  hmacCompare,
+} from '../utils/hashing.js'
 import jwt from 'jsonwebtoken'
 
 export class AuthController {
@@ -133,11 +142,11 @@ export class AuthController {
       console.log('Code de vérification :', verificationCode)
 
       // ✅ Envoyer le code par email avec `MailService`
-      // await this.mailService.sendMail(
-      //   user.email,
-      //   'Votre code de vérification',
-      //   `Bonjour,\n\nVotre code de vérification est : ${verificationCode}`
-      // )
+      await this.mailService.sendMail(
+        user.email,
+        'Votre code de vérification',
+        `Bonjour,\n\nVotre code de vérification est : ${verificationCode}`
+      )
 
       const hashedCodeValue = await hmacHashing(
         verificationCode.toString(),
@@ -145,16 +154,82 @@ export class AuthController {
       )
 
       // ✅ Enregistrer le code dans la base de données
-      await UserModel.findByIdAndUpdate(
-        user._id,
-        { verificationCode: hashedCodeValue },
-        { verificationCodeValidation: Date.now() }
-      )
+      await UserModel.findByIdAndUpdate(user._id, {
+        verificationCode: hashedCodeValue,
+        verificationCodeValidationDate: new Date(),
+      })
 
       res.status(200).json({ message: 'Code envoyé avec succès' })
     } catch (error) {
       console.log(error)
       res.status(500).json({ error: 'Erreur lors de l’envoi du code' })
+    }
+  }
+
+  verifyVerificationCode = async (req, res) => {
+    try {
+      const { email, code } = req.body
+
+      const { error } = acceptCodeSchema.validate({ email, code })
+
+      if (error) {
+        res.status(400).json({ error: error, success: false })
+        return
+      }
+
+      const user = await UserModel.findOne({
+        email,
+      }).select('+verificationCode +verificationCodeValidationDate')
+
+      if (!user) {
+        res.status(404).json({ error: 'Utilisateur non trouvé' })
+        return
+      }
+
+      if (!user.verificationCode) {
+        res.status(400).json({ error: 'Aucun code de vérification trouvé' })
+        return
+      }
+
+      console.log('Code de vérification :', user.verificationCode)
+      console.log(
+        'Code de verificationCodeValidationDate :',
+        user.verificationCodeValidationDate
+      )
+      if (!user.verificationCodeValidationDate || !user.verificationCode) {
+        res.status(400).json({ error: 'Probleme dans vérification' })
+        return
+      }
+
+      if (
+        Date.now() - user.verificationCodeValidationDate.getTime() >
+        60000000000
+      ) {
+        res.status(400).json({ error: 'Code expiré' })
+        return
+      }
+
+      const isValid = await hmacCompare(
+        code.toString(),
+        user.verificationCode,
+        process.env.HMAC_KEY
+      )
+
+      if (!isValid) {
+        res.status(400).json({ error: 'Code invalide' })
+        return
+      }
+
+      await UserModel.findByIdAndUpdate(
+        user._id,
+        { verified: true },
+        { verificationCode: null, verificationCodeValidationDate: null }
+      )
+
+      res.status(200).json({ message: 'Utilisateur vérifié avec succès' })
+    } catch (error) {
+      console.log(error)
+      res.status(500).json({ error: 'Erreur lors de la vérification du code' })
     }
   }
 }
