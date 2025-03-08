@@ -36,7 +36,6 @@ app.use(express.urlencoded({ extended: false }))
 app.get('/test', (req, res) => {
   res.json({ result: 101 })
 })
-
 app.use('/post', postRoutes)
 app.use('/api/auth', authRouter)
 

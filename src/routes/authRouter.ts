@@ -28,5 +28,8 @@ router.patch('/verify-verification-code', (req, res, next) =>
 router.patch('/change-password', identifier, (req, res, next) =>
   authController.changePassword(req, res, next)
 )
+router.patch('/change-forgot-password', identifier, (req, res, next) =>
+  authController.changeForgotPassword(req, res, next)
+)
 
 export default router

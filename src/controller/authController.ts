@@ -242,4 +242,36 @@ export class AuthController {
       next(new AppError('Erreur lors de la modification du mot de passe', 500))
     }
   }
+
+  async changeForgotPassword(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { email } = req.body
+
+      const user = await UserModel.findOne({ email })
+
+      if (!user) {
+        return next(new AppError('Utilisateur non trouvé', 404))
+      }
+
+      const newPassword = Math.random().toString(36).slice(-8)
+      const hashedPassword = await doHashing(newPassword)
+
+      await UserModel.findByIdAndUpdate(user._id, {
+        password: hashedPassword,
+      })
+
+      await this.mailService.sendMail(
+        user.email,
+        'Votre nouveau mot de passe',
+        `Bonjour,\n\nVotre nouveau mot de passe est : ${newPassword}`
+      )
+
+      res
+        .status(200)
+        .json({ message: 'Nouveau mot de passe envoyé avec succès' })
+    } catch (error) {
+      console.log(error)
+      next(new AppError('Erreur lors de l’envoi du nouveau mot de passe', 500))
+    }
+  }
 }
