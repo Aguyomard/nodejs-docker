@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express'
 import {
   acceptCodeSchema,
+  changePasswordSchema,
   signinSchema,
   signupSchema,
 } from '../models/validator.js'
@@ -93,7 +94,7 @@ export class AuthController {
   async signout(req: Request, res: Response, next: NextFunction) {
     try {
       res
-        .clearCookie('Authorization')
+        //    .clearCookie('Authorization')
         .status(200)
         .json({ message: 'Déconnexion réussie' })
     } catch (error) {
@@ -197,6 +198,48 @@ export class AuthController {
     } catch (error) {
       console.log(error)
       next(new AppError('Erreur lors de la vérification du code', 500))
+    }
+  }
+
+  async changePassword(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { email, oldPassword, newPassword } = req.body
+      const { error } = changePasswordSchema.validate({
+        email,
+        oldPassword,
+        newPassword,
+      })
+
+      if (error) {
+        return next(new AppError('Données invalides', 400))
+      }
+
+      const user = await UserModel.findOne({
+        email,
+      }).select('+password')
+
+      if (!user) {
+        return next(new AppError('Utilisateur non trouvé', 404))
+      }
+
+      const isPasswordValid = await compareHash(oldPassword, user.password)
+
+      if (!isPasswordValid) {
+        return next(new AppError('Mot de passe incorrect', 401))
+      }
+
+      const hashedPassword = await doHashing(newPassword)
+
+      await UserModel.findByIdAndUpdate(user._id, {
+        password: hashedPassword,
+      })
+
+      res.status(200).json({
+        message: 'Mot de passe modifié avec succès',
+      })
+    } catch (error) {
+      console.log(error)
+      next(new AppError('Erreur lors de la modification du mot de passe', 500))
     }
   }
 }
