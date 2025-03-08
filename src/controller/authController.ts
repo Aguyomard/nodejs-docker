@@ -1,8 +1,9 @@
+import { Request, Response, NextFunction } from 'express'
 import {
   acceptCodeSchema,
   signinSchema,
   signupSchema,
-} from '../middlewares/validator.js'
+} from '../models/validator.js'
 import { UserModel } from '../models/usersModel.js'
 import { MailService } from '../services/MailService.js'
 import {
@@ -12,37 +13,27 @@ import {
   hmacCompare,
 } from '../utils/hashing.js'
 import jwt from 'jsonwebtoken'
+import { AppError } from '../middlewares/errorHandler.js'
 
 export class AuthController {
   constructor(private mailService: MailService) {}
 
-  async signup(req, res) {
+  async signup(req: Request, res: Response, next: NextFunction) {
     try {
       const { email, password } = req.body
       const { error } = signupSchema.validate({ email, password })
 
       if (error) {
-        res
-          .status(400)
-          .json({ error: error.details[0].message, success: false })
-        return
+        return next(new AppError(error.details[0].message, 400))
       }
 
-      const existingUser = await UserModel.findOne({
-        email,
-      })
-
+      const existingUser = await UserModel.findOne({ email })
       if (existingUser) {
-        res
-          .status(400)
-          .json({ error: 'Cet email est déjà utilisé', success: false })
-        return
+        return next(new AppError('Cet email est déjà utilisé', 400))
       }
 
       const hashedPassword = await doHashing(password)
-
       const newUser = new UserModel({ email, password: hashedPassword })
-
       const result = await newUser.save()
 
       res.status(201).json({
@@ -50,75 +41,66 @@ export class AuthController {
         success: true,
         message: 'Utilisateur créé avec succès',
       })
-    } catch {
-      res.status(500).json({ error: 'Erreur lors de la création du post' })
+    } catch (error) {
+      next(new AppError('Erreur lors de la création de l’utilisateur', 500))
     }
   }
 
-  signin = async (req, res) => {
+  async signin(req: Request, res: Response, next: NextFunction) {
     try {
       const { email, password } = req.body
       const { error } = signinSchema.validate({ email, password })
 
       if (error) {
-        res.status(400).json({ error: error, success: false })
-        return
+        return next(new AppError('Données invalides', 400))
       }
 
-      const user = await UserModel.findOne({
-        email,
-      }).select('+password')
-
+      const user = await UserModel.findOne({ email }).select('+password')
       if (!user) {
-        res
-          .status(404)
-          .json({ error: 'Utilisateur non trouvé', success: false })
-        return
+        return next(new AppError('Utilisateur non trouvé', 404))
       }
 
       const isPasswordValid = await compareHash(password, user.password)
-
       if (!isPasswordValid) {
-        res
-          .status(401)
-          .json({ error: 'Mot de passe incorrect', success: false })
-        return
+        return next(new AppError('Mot de passe incorrect', 401))
       }
 
       const token = jwt.sign(
         { id: user._id, email: user.email, verified: user.verified },
-        process.env.JWT_SECRET,
-        {
-          expiresIn: '1h',
-        }
+        process.env.JWT_SECRET!,
+        { expiresIn: '1h' }
       )
 
       res.cookie('Authorization', token, {
-        httpOnly: true, // Empêche l’accès au cookie via JavaScript (protection contre XSS)
-        secure: process.env.NODE_ENV === 'production', // Active uniquement en HTTPS en production
-        sameSite: 'Strict', // Empêche les requêtes cross-site (évite les CSRF)
-        expires: new Date(Date.now() + 3600000), // Expire après 1h
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'Strict',
+        expires: new Date(Date.now() + 3600000),
       })
 
       res.status(200).json({
         user,
         success: true,
         message: 'Connexion réussie',
-        token: token,
+        token,
       })
     } catch (error) {
-      res.status(500).json({ error: 'Erreur lors de la connexion' })
+      next(new AppError('Erreur lors de la connexion', 500))
     }
   }
 
-  signout = async (req, res) => {
-    res
-      .clearCookie('Authorization')
-      .status(200)
-      .json({ message: 'Déconnexion réussie' })
+  async signout(req: Request, res: Response, next: NextFunction) {
+    try {
+      res
+        .clearCookie('Authorization')
+        .status(200)
+        .json({ message: 'Déconnexion réussie' })
+    } catch (error) {
+      next(new AppError('Erreur lors de la déconnexion', 500))
+    }
   }
 
-  sendVerificationCode = async (req, res) => {
+  async sendVerificationCode(req: Request, res: Response, next: NextFunction) {
     try {
       const { email } = req.body
 
@@ -127,21 +109,17 @@ export class AuthController {
         .select('+verified')
 
       if (!user) {
-        res.status(404).json({ error: 'Utilisateur non trouvé' })
-        return
+        return next(new AppError('Utilisateur non trouvé', 404))
       }
 
       if (user.verified) {
-        res.status(400).json({ error: 'Utilisateur déjà vérifié' })
-        return
+        return next(new AppError('Utilisateur déjà vérifié', 400))
       }
 
-      // Générer un code aléatoire
       const verificationCode = Math.floor(100000 + Math.random() * 900000)
 
       console.log('Code de vérification :', verificationCode)
 
-      // ✅ Envoyer le code par email avec `MailService`
       await this.mailService.sendMail(
         user.email,
         'Votre code de vérification',
@@ -150,10 +128,9 @@ export class AuthController {
 
       const hashedCodeValue = await hmacHashing(
         verificationCode.toString(),
-        process.env.HMAC_KEY
+        process.env.HMAC_KEY!
       )
 
-      // ✅ Enregistrer le code dans la base de données
       await UserModel.findByIdAndUpdate(user._id, {
         verificationCode: hashedCodeValue,
         verificationCodeValidationDate: new Date(),
@@ -161,75 +138,61 @@ export class AuthController {
 
       res.status(200).json({ message: 'Code envoyé avec succès' })
     } catch (error) {
-      console.log(error)
-      res.status(500).json({ error: 'Erreur lors de l’envoi du code' })
+      next(new AppError('Erreur lors de l’envoi du code', 500))
     }
   }
 
-  verifyVerificationCode = async (req, res) => {
+  async verifyVerificationCode(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) {
     try {
       const { email, code } = req.body
-
       const { error } = acceptCodeSchema.validate({ email, code })
 
       if (error) {
-        res.status(400).json({ error: error, success: false })
-        return
+        return next(new AppError('Données invalides', 400))
       }
 
-      const user = await UserModel.findOne({
-        email,
-      }).select('+verificationCode +verificationCodeValidationDate')
+      const user = await UserModel.findOne({ email }).select(
+        '+verificationCode +verificationCodeValidationDate'
+      )
 
       if (!user) {
-        res.status(404).json({ error: 'Utilisateur non trouvé' })
-        return
+        return next(new AppError('Utilisateur non trouvé', 404))
       }
 
       if (!user.verificationCode) {
-        res.status(400).json({ error: 'Aucun code de vérification trouvé' })
-        return
-      }
-
-      console.log('Code de vérification :', user.verificationCode)
-      console.log(
-        'Code de verificationCodeValidationDate :',
-        user.verificationCodeValidationDate
-      )
-      if (!user.verificationCodeValidationDate || !user.verificationCode) {
-        res.status(400).json({ error: 'Probleme dans vérification' })
-        return
+        return next(new AppError('Aucun code de vérification trouvé', 400))
       }
 
       if (
-        Date.now() - user.verificationCodeValidationDate.getTime() >
-        60000000000
+        !user.verificationCodeValidationDate ||
+        Date.now() - user.verificationCodeValidationDate.getTime() > 600000
       ) {
-        res.status(400).json({ error: 'Code expiré' })
-        return
+        return next(new AppError('Code expiré', 400))
       }
 
       const isValid = await hmacCompare(
         code.toString(),
         user.verificationCode,
-        process.env.HMAC_KEY
+        process.env.HMAC_KEY!
       )
 
       if (!isValid) {
-        res.status(400).json({ error: 'Code invalide' })
-        return
+        return next(new AppError('Code invalide', 400))
       }
 
-      await UserModel.findByIdAndUpdate(
-        user._id,
-        { verified: true },
-        { verificationCode: null, verificationCodeValidationDate: null }
-      )
+      await UserModel.findByIdAndUpdate(user._id, {
+        verified: true,
+        verificationCode: null,
+        verificationCodeValidationDate: null,
+      })
 
       res.status(200).json({ message: 'Utilisateur vérifié avec succès' })
     } catch (error) {
-      console.log(error)
-      res.status(500).json({ error: 'Erreur lors de la vérification du code' })
+      next(new AppError('Erreur lors de la vérification du code', 500))
     }
   }
 }

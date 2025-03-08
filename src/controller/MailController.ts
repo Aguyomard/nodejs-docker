@@ -1,4 +1,4 @@
-import { Request, Response } from 'express'
+import { NextFunction, Request, Response } from 'express'
 import { MailService } from '../services/MailService.js'
 
 export class MailController {
@@ -6,7 +6,7 @@ export class MailController {
     this.sendEmail = this.sendEmail.bind(this)
   }
 
-  async sendEmail(req: Request, res: Response) {
+  async sendEmail(req: Request, res: Response, next: NextFunction) {
     try {
       await this.mailService.sendMail(
         req.body.to,

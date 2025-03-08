@@ -9,6 +9,7 @@ import connectDB from './config/db.js'
 import cors from 'cors'
 import helmet from 'helmet'
 import cookieParser from 'cookie-parser'
+import { errorHandler } from './middlewares/errorHandler.js'
 
 const app = express()
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000
@@ -40,5 +41,7 @@ const startServer = async () => {
     process.exit(1) // Quitte le processus en cas d'échec
   }
 }
+
+app.use(errorHandler)
 
 startServer() // Démarrer l'application proprement

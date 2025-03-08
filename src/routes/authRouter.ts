@@ -8,11 +8,21 @@ const router = express.Router()
 const mailController = new MailController(mailService)
 const authController = new AuthController(mailService)
 
-router.post('/signup', (req, res) => authController.signup(req, res))
-router.get('/signin', (req, res) => authController.signin(req, res))
-router.get('/signout', (req, res) => authController.signout(req, res))
-router.get('/send-email', mailController.sendEmail)
-router.patch('/verify-code', authController.sendVerificationCode)
-router.patch('/verify-verification-code', authController.verifyVerificationCode)
+router.post('/signup', (req, res, next) =>
+  authController.signup(req, res, next)
+)
+router.get('/signin', (req, res, next) => authController.signin(req, res, next))
+router.get('/signout', (req, res, next) =>
+  authController.signout(req, res, next)
+)
+router.get('/send-email', (req, res, next) =>
+  mailController.sendEmail(req, res, next)
+)
+router.patch('/verify-code', (req, res, next) =>
+  authController.sendVerificationCode(req, res, next)
+)
+router.patch('/verify-verification-code', (req, res, next) =>
+  authController.verifyVerificationCode(req, res, next)
+)
 
 export default router
