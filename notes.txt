@@ -1,2 +1,11 @@
-docker exec -it <container_id> mongosh
+docker exec -it nodejs-docker-test-mongo-1 mongosh
 show dbs
+
+
+
+docker-compose down -v
+docker-compose up --build
+
+
+docker-compose down -v  # Arrête les conteneurs et supprime les volumes (optionnel mais recommandé)
+docker-compose up --build
