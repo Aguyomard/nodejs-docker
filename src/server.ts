@@ -11,6 +11,10 @@ import authRouter from './routes/authRouter.js'
 import connectDB from './config/db.js'
 import { errorHandler } from './middlewares/errorHandler.js'
 
+import { ruruHTML } from 'ruru/server'
+import { createHandler } from 'graphql-http/lib/use/express'
+import { buildSchema } from 'graphql'
+
 // Gestion des erreurs globales
 process.on('uncaughtException', (err) => {
   console.error('❌ Uncaught Exception:', err)
@@ -51,9 +55,6 @@ app.use('/api/auth', authRouter)
 // Gestion des erreurs
 app.use(errorHandler)
 
-import { createHandler } from 'graphql-http/lib/use/express'
-import { buildSchema } from 'graphql'
-
 // Construct a schema, using GraphQL schema language
 const schema = buildSchema(`type Query { hello: String } `)
 
@@ -72,6 +73,11 @@ app.all(
     rootValue: root,
   })
 )
+
+app.get('/', (_req, res) => {
+  res.type('html')
+  res.end(ruruHTML({ endpoint: '/graphql' }))
+})
 
 const startServer = async () => {
   try {
