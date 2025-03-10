@@ -51,30 +51,25 @@ app.use('/api/auth', authRouter)
 // Gestion des erreurs
 app.use(errorHandler)
 
-import { graphqlHTTP } from 'express-graphql'
+import { createHandler } from 'graphql-http/lib/use/express'
 import { buildSchema } from 'graphql'
 
-// Définition du schéma GraphQL
-const schema = buildSchema(`
-  type Query {
-    hello: String,
-    age: String
-  }
-`)
+// Construct a schema, using GraphQL schema language
+const schema = buildSchema(`type Query { hello: String } `)
 
-// Résolveurs (fonctions qui retournent les données)
-const rootValue = {
-  hello: () => 'Hello world!',
-  age: () => '25 ans',
+// The root provides a resolver function for each API endpoint
+const root = {
+  hello() {
+    return 'Hello world!'
+  },
 }
 
-// Route GraphQL
-app.use(
+// Create and use the GraphQL handler.
+app.all(
   '/graphql',
-  graphqlHTTP({
-    schema,
-    rootValue,
-    graphiql: true, // Active GraphiQL
+  createHandler({
+    schema: schema,
+    rootValue: root,
   })
 )
 
