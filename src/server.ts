@@ -13,7 +13,8 @@ import { errorHandler } from './middlewares/errorHandler.js'
 
 import { ruruHTML } from 'ruru/server'
 import { createHandler } from 'graphql-http/lib/use/express'
-import { buildSchema } from 'graphql'
+import { schema } from './graphql/schema.js'
+import { graphqlHandler } from './graphql/index.js'
 
 // Gestion des erreurs globales
 process.on('uncaughtException', (err) => {
@@ -55,25 +56,8 @@ app.use('/api/auth', authRouter)
 // Gestion des erreurs
 app.use(errorHandler)
 
-// Construct a schema, using GraphQL schema language
-const schema = buildSchema(`type Query { hello: String } `)
-
-// The root provides a resolver function for each API endpoint
-const root = {
-  hello() {
-    return 'Hello world!'
-  },
-}
-
-// Create and use the GraphQL handler.
-app.all(
-  '/graphql',
-  createHandler({
-    schema: schema,
-    rootValue: root,
-  })
-)
-
+// Configuration de GraphQL
+app.all('/graphql', graphqlHandler)
 app.get('/', (_req, res) => {
   res.type('html')
   res.end(ruruHTML({ endpoint: '/graphql' }))
