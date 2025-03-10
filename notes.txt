@@ -9,3 +9,13 @@ docker-compose up --build
 
 docker-compose down -v  # Arrête les conteneurs et supprime les volumes (optionnel mais recommandé)
 docker-compose up --build
+
+
+query myFirstQuery($name: String) {
+  hello(name: "Alec")
+  goodBye(name: $name)
+  age
+  weight
+  isOver18
+  hobbies
+}
