@@ -27,7 +27,16 @@ const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000
 
 // Middlewares
 app.use(cors())
-app.use(helmet())
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        'script-src': ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+        'style-src': ["'self'", "'unsafe-inline'"],
+      },
+    },
+  })
+)
 app.use(cookieParser())
 app.use(express.json())
 app.use(express.urlencoded({ extended: false }))
@@ -41,6 +50,33 @@ app.use('/api/auth', authRouter)
 
 // Gestion des erreurs
 app.use(errorHandler)
+
+import { graphqlHTTP } from 'express-graphql'
+import { buildSchema } from 'graphql'
+
+// Définition du schéma GraphQL
+const schema = buildSchema(`
+  type Query {
+    hello: String,
+    age: String
+  }
+`)
+
+// Résolveurs (fonctions qui retournent les données)
+const rootValue = {
+  hello: () => 'Hello world!',
+  age: () => '25 ans',
+}
+
+// Route GraphQL
+app.use(
+  '/graphql',
+  graphqlHTTP({
+    schema,
+    rootValue,
+    graphiql: true, // Active GraphiQL
+  })
+)
 
 const startServer = async () => {
   try {
