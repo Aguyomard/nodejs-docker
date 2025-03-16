@@ -1,69 +1,40 @@
-import {
-  GraphQLSchema,
-  GraphQLObjectType,
-  GraphQLString,
-  GraphQLInt,
-  GraphQLFloat,
-  GraphQLBoolean,
-  GraphQLList,
-  GraphQLNonNull,
-  GraphQLID,
-} from 'graphql'
+import { createSchema } from 'graphql-yoga'
 
-const MaterialType = new GraphQLObjectType({
-  name: 'Material',
-  fields: () => ({
-    id: { type: new GraphQLNonNull(GraphQLID) },
-    name: { type: GraphQLString },
-    quantity: { type: GraphQLInt },
-  }),
-})
+export const schema = createSchema({
+  typeDefs: /* GraphQL */ `
+    type Material {
+      id: ID!
+      name: String
+      quantity: Int
+    }
 
-const ParticipantType: GraphQLObjectType<any, any> = new GraphQLObjectType({
-  name: 'Participant',
-  fields: () => ({
-    id: { type: new GraphQLNonNull(GraphQLID) },
-    name: { type: GraphQLString },
-    friends: { type: new GraphQLList(new GraphQLNonNull(ParticipantType)) },
-    materials: { type: new GraphQLList(new GraphQLNonNull(MaterialType)) },
-    invitedBy: { type: ParticipantType },
-  }),
-})
+    type Participant {
+      id: ID!
+      name: String
+      friends: [Participant!]
+      materials: [Material!]
+      invitedBy: Participant
+    }
 
-const QueryType = new GraphQLObjectType({
-  name: 'Query',
-  fields: {
-    hello: {
-      type: GraphQLString,
-      args: { name: { type: GraphQLString } },
-      resolve: (_parent, args) => `Hello ${args.name || 'world'}!`,
-    },
-    goodBye: {
-      type: GraphQLString,
-      args: { name: { type: GraphQLString } },
-      resolve: (_parent, args) => `Goodbye ${args.name || 'world'}!`,
-    },
-    age: {
-      type: GraphQLInt,
-      resolve: () => 30,
-    },
-    weight: {
-      type: new GraphQLNonNull(GraphQLFloat),
-      resolve: () => 70.5,
-    },
-    isOver18: {
-      type: GraphQLBoolean,
-      resolve: () => true,
-    },
-    hobbies: {
-      type: new GraphQLNonNull(
-        new GraphQLList(new GraphQLNonNull(GraphQLString))
-      ),
-      resolve: () => ['reading', 'coding', 'swimming'],
-    },
-    participant: {
-      type: ParticipantType,
-      resolve: () => ({
+    type Query {
+      hello(name: String): String
+      goodBye(name: String): String
+      age: Int
+      weight: Float!
+      isOver18: Boolean
+      hobbies: [String!]!
+      participant: Participant
+    }
+  `,
+  resolvers: {
+    Query: {
+      hello: (_parent, args) => `Hello ${args.name || 'world'}!`,
+      goodBye: (_parent, args) => `Goodbye ${args.name || 'world'}!`,
+      age: () => 30,
+      weight: () => 70.5,
+      isOver18: () => true,
+      hobbies: () => ['reading', 'coding', 'swimming'],
+      participant: () => ({
         id: '123',
         name: 'John Doe',
         friends: [
@@ -80,8 +51,4 @@ const QueryType = new GraphQLObjectType({
       }),
     },
   },
-})
-
-export const schema = new GraphQLSchema({
-  query: QueryType,
 })

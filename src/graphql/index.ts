@@ -1,8 +1,7 @@
-import { createHandler } from 'graphql-http/lib/use/express'
+import { createYoga } from 'graphql-yoga'
 import { schema } from './schema.js'
-import { resolvers } from './resolvers.js'
 
-export const graphqlHandler = createHandler({
-  schema: schema,
-  rootValue: resolvers,
+export const graphqlHandler = createYoga({
+  schema,
+  graphqlEndpoint: '/graphql',
 })

@@ -24,6 +24,7 @@
     "express": "^4.21.2",
     "graphql": "^16.10.0",
     "graphql-http": "^1.22.4",
+    "graphql-yoga": "^5.13.1",
     "helmet": "^8.0.0",
     "joi": "^17.13.3",
     "jsonwebtoken": "^9.0.2",
