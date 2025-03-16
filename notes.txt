@@ -19,3 +19,12 @@ query myFirstQuery($name: String) {
   isOver18
   hobbies
 }
+
+query {
+  me {
+    id
+    name
+    email
+    age
+  }
+}
