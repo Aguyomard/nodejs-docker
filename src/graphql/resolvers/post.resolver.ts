@@ -1,5 +1,5 @@
 import { Context } from '../types/context.types.js'
-import { Post, PostArgs } from '../types/post.types.js'
+import { EditPostArgs, Post, PostArgs } from '../types/post.types.js'
 
 export const postResolvers = {
   Query: {
@@ -10,12 +10,49 @@ export const postResolvers = {
       if (!post) throw new Error(`Post with ID ${id} not found`)
       return post
     },
-
-    allPosts: (_parent: unknown, _args: unknown, { db }: Context): Post[] =>
-      db.posts,
   },
 
   Mutation: {
+    editPost: (
+      _parent: unknown,
+      { id, input }: EditPostArgs,
+      { db, pubSub }: Context
+    ): Post => {
+      const post = db.posts.find((p) => p.id === id)
+      if (!post) {
+        throw new Error(`Post with ID ${id} not found`)
+      }
+
+      Object.assign(post, input)
+
+      pubSub.publish('post', {
+        data: post,
+        mutation: 'UPDATED',
+      })
+
+      return post
+    },
+    deletePost: (
+      _parent: unknown,
+      { id }: { id: string },
+      { db, pubSub }: Context
+    ): Post => {
+      const postIndex = db.posts.findIndex((p) => p.id === id)
+
+      if (postIndex === -1) {
+        throw new Error(`Post with ID ${id} not found`)
+      }
+
+      const [deletedPost] = db.posts.splice(postIndex, 1)
+
+      pubSub.publish('post', {
+        data: deletedPost,
+        mutation: 'DELETED',
+      })
+
+      return deletedPost
+    },
+
     createPost: (
       _parent: unknown,
       {
@@ -50,7 +87,10 @@ export const postResolvers = {
       db.posts.push(newPost)
 
       if (newPost.published) {
-        pubSub.publish('post', newPost)
+        pubSub.publish('post', {
+          data: newPost,
+          mutation: 'CREATED',
+        })
       }
 
       return newPost

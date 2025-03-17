@@ -14,7 +14,7 @@ export const postTypeDefs = `
   }
 
   type Subscription {
-    post: Post!
+    post: PostSubscriptionPayload!
   }
 
   input CreatePostInput {
@@ -24,8 +24,27 @@ export const postTypeDefs = `
     published: Boolean!
   }
 
+  input EditPostInput {
+    title: String
+    content: String
+    published: Boolean
+  }
+
   type Mutation {
     createPost(input: CreatePostInput!): Post!
     allPosts: [Post!]!
+    deletePost(id: ID!): Post!
+    editPost(id: ID!, input: EditPostInput!): Post!
+  }
+
+  enum MutationType {
+    CREATED
+    UPDATED
+    DELETED
+  }
+
+  type PostSubscriptionPayload {
+    mutation: MutationType!
+    data: Post!
   }
 `
