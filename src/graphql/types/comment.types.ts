@@ -8,3 +8,11 @@ export interface Comment {
 export interface CommentArgs {
   id: string
 }
+
+export type CreateCommentArgs = {
+  input: {
+    text: string
+    postId: string
+    authorId: string
+  }
+}
