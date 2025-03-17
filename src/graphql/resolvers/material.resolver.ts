@@ -1,7 +1,7 @@
-import { materials } from '../data.js'
+import { db } from '../data.js'
 
 export const materialResolvers = {
   Query: {
-    allMaterials: () => materials,
+    allMaterials: () => db.materials,
   },
 }

@@ -1,4 +1,4 @@
-import { users, comments, posts } from '../data.js'
+import { db } from '../data.js'
 import {
   User,
   UserArgs,
@@ -9,17 +9,17 @@ import {
 export const userResolvers = {
   Query: {
     me: (): User | null => {
-      return users.length ? users[0] : null
+      return db.users.length ? db.users[0] : null
     },
 
     user: (_parent: unknown, { id }: UserArgs): User => {
-      const user = users.find((user) => user.id === id)
+      const user = db.users.find((user) => user.id === id)
       if (!user) throw new Error(`User with ID ${id} not found`)
       return user
     },
 
     allUsers: (): User[] => {
-      return users
+      return db.users
     },
   },
 
@@ -29,21 +29,21 @@ export const userResolvers = {
         throw new Error('Name and Email are required fields')
       }
 
-      if (users.some((user) => user.email === input.email)) {
+      if (db.users.some((user) => user.email === input.email)) {
         throw new Error(`User with email ${input.email} already exists`)
       }
 
       const newUser: User = {
-        id: String(users.length + 1),
+        id: String(db.users.length + 1),
         ...input,
       }
 
-      users.push(newUser)
+      db.users.push(newUser)
       return newUser
     },
 
     updateUser: (_parent: unknown, { id, input }: UpdateUserArgs): User => {
-      const user = users.find((u) => u.id === id)
+      const user = db.users.find((u) => u.id === id)
       if (!user) {
         throw new Error(`User with ID ${id} not found`)
       }
@@ -53,24 +53,24 @@ export const userResolvers = {
     },
 
     deleteUser: (_parent: unknown, { id }: UserArgs): boolean => {
-      const userIndex = users.findIndex((u) => u.id === id)
+      const userIndex = db.users.findIndex((u) => u.id === id)
       if (userIndex === -1) {
         throw new Error(`User with ID ${id} not found`)
       }
 
-      for (let i = comments.length - 1; i >= 0; i--) {
-        if (comments[i].authorId === id) {
-          comments.splice(i, 1)
+      for (let i = db.comments.length - 1; i >= 0; i--) {
+        if (db.comments[i].authorId === id) {
+          db.comments.splice(i, 1)
         }
       }
 
-      users.splice(userIndex, 1)
+      db.users.splice(userIndex, 1)
       return true
     },
   },
 
   User: {
     posts: (parent: User) =>
-      posts.filter((post) => post.authorId === parent.id),
+      db.posts.filter((post) => post.authorId === parent.id),
   },
 }
