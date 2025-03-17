@@ -25,7 +25,7 @@ export const userResolvers = {
     createUser: (
       _parent: unknown,
       { input }: CreateUserArgs,
-      { db }: Context
+      { db, pubSub }: Context
     ): User => {
       if (!input.name || !input.email) {
         throw new Error('Name and Email are required fields')
@@ -41,6 +41,9 @@ export const userResolvers = {
       }
 
       db.users.push(newUser)
+
+      pubSub.publish('userCreated', newUser)
+
       return newUser
     },
 
@@ -70,6 +73,14 @@ export const userResolvers = {
 
       db.users.splice(userIndex, 1)
       return true
+    },
+  },
+
+  Subscription: {
+    userCreated: {
+      subscribe: (_parent: unknown, _args: unknown, { pubSub }: Context) =>
+        pubSub.subscribe('userCreated'),
+      resolve: (payload: User) => payload,
     },
   },
 

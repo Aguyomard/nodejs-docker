@@ -30,4 +30,8 @@ export const userTypeDefs = `
     updateUser(id: ID!, input: UpdateUserInput!): User
     deleteUser(id: ID!): Boolean
   }
+
+  type Subscription {
+    userCreated: User!
+  }
 `
