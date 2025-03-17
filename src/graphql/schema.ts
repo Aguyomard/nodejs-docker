@@ -1,5 +1,5 @@
 import { createSchema } from 'graphql-yoga'
-import { users, materials, participants } from './data.js'
+import { users, materials, participants, posts, comments } from './data.js'
 
 export const schema = createSchema({
   typeDefs: `
@@ -8,6 +8,7 @@ export const schema = createSchema({
       name: String!
       email: String!
       age: Int
+      posts: [Post!]!
     }
 
     type Material {
@@ -24,6 +25,21 @@ export const schema = createSchema({
       invitedBy: Participant
     }
 
+    type Post {
+      id: ID!
+      title: String!
+      content: String!
+      author: User!
+      comments: [Comment!]!
+    }
+
+    type Comment {
+      id: ID!
+      content: String!
+      post: Post!
+      author: User!
+    }
+
     type Query {
       me: User
       user(id: ID!): User
@@ -31,6 +47,10 @@ export const schema = createSchema({
       hello(name: String): String
       participant(id: ID!): Participant
       allParticipants: [Participant!]!
+      post(id: ID!): Post
+      allPosts: [Post!]!
+      comment(id: ID!): Comment
+      allComments: [Comment!]!
     }
 
     input UserInput {
@@ -82,6 +102,28 @@ export const schema = createSchema({
         if (!participants.length) throw new Error('No participants available')
         return participants
       },
+
+      post: (_parent, args) => {
+        const post = posts.find((p) => p.id === args.id)
+        if (!post) throw new Error(`Post with ID ${args.id} not found`)
+        return post
+      },
+
+      allPosts: () => {
+        if (!posts.length) throw new Error('No posts available')
+        return posts
+      },
+
+      comment: (_parent, args) => {
+        const comment = comments.find((c) => c.id === args.id)
+        if (!comment) throw new Error(`Comment with ID ${args.id} not found`)
+        return comment
+      },
+
+      allComments: () => {
+        if (!comments.length) throw new Error('No comments available')
+        return comments
+      },
     },
 
     Mutation: {
@@ -122,9 +164,19 @@ export const schema = createSchema({
           throw new Error(`User with ID ${args.id} not found`)
         }
 
+        for (let i = comments.length - 1; i >= 0; i--) {
+          if (comments[i].authorId === args.id) {
+            comments.splice(i, 1)
+          }
+        }
+
         users.splice(userIndex, 1)
         return true
       },
+    },
+
+    User: {
+      posts: (parent) => posts.filter((post) => post.authorId === parent.id),
     },
 
     Participant: {
@@ -142,6 +194,17 @@ export const schema = createSchema({
         if (!parent.invitedBy) return null
         return participants.find((p) => p.id === parent.invitedBy) || null
       },
+    },
+
+    Post: {
+      author: (parent) => users.find((user) => user.id === parent.authorId),
+      comments: (parent) =>
+        comments.filter((comment) => comment.postId === parent.id),
+    },
+
+    Comment: {
+      post: (parent) => posts.find((post) => post.id === parent.postId),
+      author: (parent) => users.find((user) => user.id === parent.authorId),
     },
   },
 })
