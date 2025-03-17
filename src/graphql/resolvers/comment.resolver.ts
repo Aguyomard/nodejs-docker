@@ -1,4 +1,4 @@
-import { db } from '../data.js'
+import { Context } from '../types/context.types.js'
 import { Comment, CommentArgs } from '../types/comment.types.js'
 
 export const commentResolvers = {
@@ -6,9 +6,9 @@ export const commentResolvers = {
     comment: (
       _parent: unknown,
       { id }: CommentArgs,
-      context: { db: typeof db }
+      { db }: Context
     ): Comment => {
-      const comment = context.db.comments.find((c) => c.id === id)
+      const comment = db.comments.find((c) => c.id === id)
       if (!comment) throw new Error(`Comment with ID ${id} not found`)
       return comment
     },
@@ -16,17 +16,15 @@ export const commentResolvers = {
     allComments: (
       _parent: unknown,
       _args: unknown,
-      context: { db: typeof db }
-    ): Comment[] => {
-      return context.db.comments
-    },
+      { db }: Context
+    ): Comment[] => db.comments,
   },
 
   Comment: {
-    post: (parent: Comment, _args: unknown, context: { db: typeof db }) =>
-      context.db.posts.find((post) => post.id === parent.postId),
+    post: (parent: Comment, _args: unknown, { db }: Context) =>
+      db.posts.find((post) => post.id === parent.postId) || null,
 
-    author: (parent: Comment, _args: unknown, context: { db: typeof db }) =>
-      context.db.users.find((user) => user.id === parent.authorId),
+    author: (parent: Comment, _args: unknown, { db }: Context) =>
+      db.users.find((user) => user.id === parent.authorId) || null,
   },
 }

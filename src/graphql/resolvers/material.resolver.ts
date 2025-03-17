@@ -1,13 +1,8 @@
-import { db } from '../data.js'
+import { Context } from '../types/context.types.js'
 
 export const materialResolvers = {
   Query: {
-    allMaterials: (
-      _parent: unknown,
-      _args: unknown,
-      context: { db: typeof db }
-    ) => {
-      return context.db.materials
-    },
+    allMaterials: (_parent: unknown, _args: unknown, { db }: Context) =>
+      db.materials,
   },
 }
