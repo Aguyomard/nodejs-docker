@@ -39,18 +39,21 @@ export const db = {
       title: 'GraphQL Basics',
       content: 'GraphQL is awesome!',
       authorId: '1',
+      published: true,
     },
     {
       id: '2',
       title: 'Advanced GraphQL',
       content: 'Deep dive into GraphQL.',
       authorId: '1',
+      published: true,
     },
     {
       id: '3',
       title: 'Vue.js and GraphQL',
       content: 'Using GraphQL with Vue.js.',
       authorId: '2',
+      published: true,
     },
   ],
 

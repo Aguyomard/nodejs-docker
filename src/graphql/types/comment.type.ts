@@ -24,5 +24,4 @@ export const commentTypeDefs = `
   type Mutation {
     createComment(input: CreateCommentInput!): Comment
   }
-  
 `
