@@ -9,6 +9,7 @@ import cookieParser from 'cookie-parser'
 import postRoutes from './routes/post.routes.js'
 import authRouter from './routes/authRouter.js'
 import connectDB from './config/db.js'
+import postgresPool from './config/postgres.js'
 import { errorHandler } from './middlewares/errorHandler.js'
 import { graphqlHandler } from './graphql/index.js'
 
@@ -48,7 +49,7 @@ app.use(express.urlencoded({ extended: false }))
 
 // Routes
 app.get('/test', (req, res) => {
-  res.json({ result: 101 })
+  res.json({ result: 201 })
 })
 app.use('/post', postRoutes)
 app.use('/api/auth', authRouter)
@@ -62,6 +63,10 @@ app.use('/graphql', graphqlHandler)
 const startServer = async () => {
   try {
     await connectDB()
+
+    await postgresPool.query('SELECT 1')
+    console.log('✅ PostgreSQL connecté avec succès !')
+
     app.listen(PORT, () => {
       console.log(`🚀 Server is running on http://localhost:${PORT}`)
     })
