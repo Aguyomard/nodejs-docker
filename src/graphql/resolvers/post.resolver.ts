@@ -3,57 +3,31 @@ import { EditPostArgs, Post, PostArgs } from '../types/post.types.js'
 
 export const postResolvers = {
   Query: {
-    allPosts: (_parent: unknown, _args: unknown, { db }: Context): Post[] =>
-      db.posts,
-    post: (_parent: unknown, { id }: PostArgs, { db }: Context): Post => {
-      const post = db.posts.find((p) => p.id === id)
-      if (!post) throw new Error(`Post with ID ${id} not found`)
+    allPosts: async (
+      _parent: unknown,
+      _args: unknown,
+      { prisma }: Context
+    ): Promise<Post[]> => {
+      return prisma.post.findMany()
+    },
+
+    post: async (
+      _parent: unknown,
+      { id }: PostArgs,
+      { prisma }: Context
+    ): Promise<Post> => {
+      const post = await prisma.post.findUnique({
+        where: { id },
+      })
+      if (!post) {
+        throw new Error(`Post with ID ${id} not found`)
+      }
       return post
     },
   },
 
   Mutation: {
-    editPost: (
-      _parent: unknown,
-      { id, input }: EditPostArgs,
-      { db, pubSub }: Context
-    ): Post => {
-      const post = db.posts.find((p) => p.id === id)
-      if (!post) {
-        throw new Error(`Post with ID ${id} not found`)
-      }
-
-      Object.assign(post, input)
-
-      pubSub.publish('post', {
-        data: post,
-        mutation: 'UPDATED',
-      })
-
-      return post
-    },
-    deletePost: (
-      _parent: unknown,
-      { id }: { id: string },
-      { db, pubSub }: Context
-    ): Post => {
-      const postIndex = db.posts.findIndex((p) => p.id === id)
-
-      if (postIndex === -1) {
-        throw new Error(`Post with ID ${id} not found`)
-      }
-
-      const [deletedPost] = db.posts.splice(postIndex, 1)
-
-      pubSub.publish('post', {
-        data: deletedPost,
-        mutation: 'DELETED',
-      })
-
-      return deletedPost
-    },
-
-    createPost: (
+    createPost: async (
       _parent: unknown,
       {
         input,
@@ -65,26 +39,25 @@ export const postResolvers = {
           published: boolean
         }
       },
-      { db, pubSub }: Context
-    ): Post => {
-      if (!input.title || !input.content || !input.authorId) {
-        throw new Error('Title, content, and authorId are required')
-      }
-
-      const author = db.users.find((u) => u.id === input.authorId)
+      { prisma, pubSub }: Context
+    ): Promise<Post> => {
+      // Vérifier si l'auteur existe
+      const author = await prisma.user.findUnique({
+        where: { id: input.authorId },
+      })
       if (!author) {
         throw new Error(`User with ID ${input.authorId} not found`)
       }
 
-      const newPost: Post = {
-        id: String(db.posts.length + 1),
-        title: input.title,
-        content: input.content,
-        authorId: input.authorId,
-        published: input.published,
-      }
-
-      db.posts.push(newPost)
+      // Créer le post avec Prisma
+      const newPost = await prisma.post.create({
+        data: {
+          title: input.title,
+          content: input.content,
+          authorId: input.authorId,
+          published: input.published,
+        },
+      })
 
       if (newPost.published) {
         pubSub.publish('post', {
@@ -94,6 +67,59 @@ export const postResolvers = {
       }
 
       return newPost
+    },
+
+    editPost: async (
+      _parent: unknown,
+      { id, input }: EditPostArgs,
+      { prisma, pubSub }: Context
+    ): Promise<Post> => {
+      // Vérifier si le post existe
+      const existingPost = await prisma.post.findUnique({
+        where: { id },
+      })
+      if (!existingPost) {
+        throw new Error(`Post with ID ${id} not found`)
+      }
+
+      // Mettre à jour le post
+      const updatedPost = await prisma.post.update({
+        where: { id },
+        data: input,
+      })
+
+      pubSub.publish('post', {
+        data: updatedPost,
+        mutation: 'UPDATED',
+      })
+
+      return updatedPost
+    },
+
+    deletePost: async (
+      _parent: unknown,
+      { id }: { id: string },
+      { prisma, pubSub }: Context
+    ): Promise<Post> => {
+      // Vérifier si le post existe
+      const existingPost = await prisma.post.findUnique({
+        where: { id },
+      })
+      if (!existingPost) {
+        throw new Error(`Post with ID ${id} not found`)
+      }
+
+      // Supprimer le post
+      const deletedPost = await prisma.post.delete({
+        where: { id },
+      })
+
+      pubSub.publish('post', {
+        data: deletedPost,
+        mutation: 'DELETED',
+      })
+
+      return deletedPost
     },
   },
 
@@ -111,10 +137,16 @@ export const postResolvers = {
   },
 
   Post: {
-    author: (parent: Post, _args: unknown, { db }: Context) =>
-      db.users.find((user) => user.id === parent.authorId) || null,
+    author: async (parent: Post, _args: unknown, { prisma }: Context) => {
+      return prisma.user.findUnique({
+        where: { id: parent.authorId },
+      })
+    },
 
-    comments: (parent: Post, _args: unknown, { db }: Context) =>
-      db.comments.filter((comment) => comment.postId === parent.id),
+    comments: async (parent: Post, _args: unknown, { prisma }: Context) => {
+      return prisma.comment.findMany({
+        where: { postId: parent.id },
+      })
+    },
   },
 }
