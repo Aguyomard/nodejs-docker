@@ -2,7 +2,7 @@ export interface User {
   id: string
   name: string
   email: string
-  age?: number
+  age?: number | null
 }
 
 export interface UserInput {

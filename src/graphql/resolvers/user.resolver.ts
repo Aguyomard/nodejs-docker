@@ -8,70 +8,96 @@ import {
 
 export const userResolvers = {
   Query: {
-    me: (_parent: unknown, _args: unknown, { db }: Context): User | null =>
-      db.users.length ? db.users[0] : null,
+    me: async (
+      _parent: unknown,
+      _args: unknown,
+      { prisma }: Context
+    ): Promise<User | null> => {
+      const users = await prisma.user.findMany()
+      return users.length ? users[0] : null
+    },
 
-    user: (_parent: unknown, { id }: UserArgs, { db }: Context): User => {
-      const user = db.users.find((user) => user.id === id)
-      if (!user) throw new Error(`User with ID ${id} not found`)
+    user: async (
+      _parent: unknown,
+      { id }: UserArgs,
+      { prisma }: Context
+    ): Promise<User> => {
+      const user = await prisma.user.findUnique({
+        where: { id },
+      })
+      if (!user) {
+        throw new Error(`User with ID ${id} not found`)
+      }
       return user
     },
 
-    allUsers: (_parent: unknown, _args: unknown, { db }: Context): User[] =>
-      db.users,
+    allUsers: async (
+      _parent: unknown,
+      _args: unknown,
+      { prisma }: Context
+    ): Promise<User[]> => {
+      return prisma.user.findMany()
+    },
   },
 
   Mutation: {
-    createUser: (
+    createUser: async (
       _parent: unknown,
       { input }: CreateUserArgs,
-      { db, pubSub }: Context
-    ): User => {
-      if (!input.name || !input.email) {
-        throw new Error('Name and Email are required fields')
-      }
-
-      if (db.users.some((user) => user.email === input.email)) {
+      { prisma, pubSub }: Context
+    ) => {
+      const existingUser = await prisma.user.findUnique({
+        where: { email: input.email },
+      })
+      if (existingUser) {
         throw new Error(`User with email ${input.email} already exists`)
       }
 
-      const newUser: User = {
-        id: String(db.users.length + 1),
-        ...input,
-      }
-
-      db.users.push(newUser)
+      const newUser = await prisma.user.create({
+        data: input,
+      })
 
       pubSub.publish('userCreated', newUser)
 
       return newUser
     },
 
-    updateUser: (
+    updateUser: async (
       _parent: unknown,
       { id, input }: UpdateUserArgs,
-      { db }: Context
-    ): User => {
-      const user = db.users.find((u) => u.id === id)
-      if (!user) throw new Error(`User with ID ${id} not found`)
-
-      Object.assign(user, input)
-      return user
-    },
-
-    deleteUser: (
-      _parent: unknown,
-      { id }: UserArgs,
-      { db }: Context
-    ): boolean => {
-      const userIndex = db.users.findIndex((u) => u.id === id)
-      if (userIndex === -1) {
+      { prisma }: Context
+    ): Promise<User> => {
+      const existingUser = await prisma.user.findUnique({
+        where: { id },
+      })
+      if (!existingUser) {
         throw new Error(`User with ID ${id} not found`)
       }
 
-      db.comments = db.comments.filter((comment) => comment.authorId !== id)
+      const updatedUser = await prisma.user.update({
+        where: { id },
+        data: input,
+      })
 
-      db.users.splice(userIndex, 1)
+      return updatedUser
+    },
+
+    deleteUser: async (
+      _parent: unknown,
+      { id }: UserArgs,
+      { prisma }: Context
+    ): Promise<boolean> => {
+      const existingUser = await prisma.user.findUnique({
+        where: { id },
+      })
+      if (!existingUser) {
+        throw new Error(`User with ID ${id} not found`)
+      }
+
+      await prisma.user.delete({
+        where: { id },
+      })
+
       return true
     },
   },
@@ -85,7 +111,10 @@ export const userResolvers = {
   },
 
   User: {
-    posts: (parent: User, _args: unknown, { db }: Context) =>
-      db.posts.filter((post) => post.authorId === parent.id),
+    posts: async (parent: User, _args: unknown, { prisma }: Context) => {
+      return prisma.post.findMany({
+        where: { authorId: parent.id },
+      })
+    },
   },
 }
