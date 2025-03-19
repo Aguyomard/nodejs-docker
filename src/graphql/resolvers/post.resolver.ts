@@ -41,7 +41,6 @@ export const postResolvers = {
       },
       { prisma, pubSub }: Context
     ): Promise<Post> => {
-      // Vérifier si l'auteur existe
       const author = await prisma.user.findUnique({
         where: { id: input.authorId },
       })
@@ -49,7 +48,6 @@ export const postResolvers = {
         throw new Error(`User with ID ${input.authorId} not found`)
       }
 
-      // Créer le post avec Prisma
       const newPost = await prisma.post.create({
         data: {
           title: input.title,
@@ -74,7 +72,6 @@ export const postResolvers = {
       { id, input }: EditPostArgs,
       { prisma, pubSub }: Context
     ): Promise<Post> => {
-      // Vérifier si le post existe
       const existingPost = await prisma.post.findUnique({
         where: { id },
       })
@@ -82,7 +79,6 @@ export const postResolvers = {
         throw new Error(`Post with ID ${id} not found`)
       }
 
-      // Mettre à jour le post
       const updatedPost = await prisma.post.update({
         where: { id },
         data: input,
@@ -101,7 +97,6 @@ export const postResolvers = {
       { id }: { id: string },
       { prisma, pubSub }: Context
     ): Promise<Post> => {
-      // Vérifier si le post existe
       const existingPost = await prisma.post.findUnique({
         where: { id },
       })
@@ -109,7 +104,6 @@ export const postResolvers = {
         throw new Error(`Post with ID ${id} not found`)
       }
 
-      // Supprimer le post
       const deletedPost = await prisma.post.delete({
         where: { id },
       })

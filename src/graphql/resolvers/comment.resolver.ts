@@ -7,47 +7,56 @@ import {
 
 export const commentResolvers = {
   Query: {
-    comment: (
+    comment: async (
       _parent: unknown,
       { id }: CommentArgs,
-      { db }: Context
-    ): Comment => {
-      const comment = db.comments.find((c) => c.id === id)
-      if (!comment) throw new Error(`Comment with ID ${id} not found`)
+      { prisma }: Context
+    ): Promise<Comment> => {
+      const comment = await prisma.comment.findUnique({
+        where: { id },
+      })
+      if (!comment) {
+        throw new Error(`Comment with ID ${id} not found`)
+      }
       return comment
     },
 
-    allComments: (
+    allComments: async (
       _parent: unknown,
       _args: unknown,
-      { db }: Context
-    ): Comment[] => db.comments,
+      { prisma }: Context
+    ): Promise<Comment[]> => {
+      return prisma.comment.findMany()
+    },
   },
 
   Mutation: {
-    createComment: (
+    createComment: async (
       _parent: unknown,
       { input }: CreateCommentArgs,
-      { db, pubSub }: Context
-    ): Comment => {
-      if (!input.text || !input.postId || !input.authorId) {
-        throw new Error('Text, postId, and authorId are required')
+      { prisma, pubSub }: Context
+    ): Promise<Comment> => {
+      const post = await prisma.post.findUnique({
+        where: { id: input.postId },
+      })
+      if (!post) {
+        throw new Error(`Post with ID ${input.postId} not found`)
       }
 
-      const post = db.posts.find((p) => p.id === input.postId)
-      if (!post) throw new Error(`Post with ID ${input.postId} not found`)
-
-      const author = db.users.find((u) => u.id === input.authorId)
-      if (!author) throw new Error(`User with ID ${input.authorId} not found`)
-
-      const newComment: Comment = {
-        id: String(db.comments.length + 1),
-        content: input.text,
-        postId: input.postId,
-        authorId: input.authorId,
+      const author = await prisma.user.findUnique({
+        where: { id: input.authorId },
+      })
+      if (!author) {
+        throw new Error(`User with ID ${input.authorId} not found`)
       }
 
-      db.comments.push(newComment)
+      const newComment = await prisma.comment.create({
+        data: {
+          content: input.text,
+          postId: input.postId,
+          authorId: input.authorId,
+        },
+      })
 
       pubSub.publish(`commentAdded:${input.postId}`, newComment)
 
@@ -57,15 +66,21 @@ export const commentResolvers = {
 
   Subscription: {
     commentAdded: {
-      subscribe: (
+      subscribe: async (
         _parent: unknown,
         { postId }: { postId: string },
-        { pubSub, db }: Context
+        { prisma, pubSub }: Context
       ) => {
-        if (!postId) throw new Error('Post ID is required')
+        if (!postId) {
+          throw new Error('Post ID is required')
+        }
 
-        const post = db.posts.find((p) => p.id === postId)
-        if (!post) throw new Error(`Post with ID ${postId} not found`)
+        const post = await prisma.post.findUnique({
+          where: { id: postId },
+        })
+        if (!post) {
+          throw new Error(`Post with ID ${postId} not found`)
+        }
 
         return pubSub.subscribe(`commentAdded:${postId}`)
       },
@@ -74,10 +89,16 @@ export const commentResolvers = {
   },
 
   Comment: {
-    post: (parent: Comment, _args: unknown, { db }: Context) =>
-      db.posts.find((post) => post.id === parent.postId) || null,
+    post: async (parent: Comment, _args: unknown, { prisma }: Context) => {
+      return prisma.post.findUnique({
+        where: { id: parent.postId },
+      })
+    },
 
-    author: (parent: Comment, _args: unknown, { db }: Context) =>
-      db.users.find((user) => user.id === parent.authorId) || null,
+    author: async (parent: Comment, _args: unknown, { prisma }: Context) => {
+      return prisma.user.findUnique({
+        where: { id: parent.authorId },
+      })
+    },
   },
 }
