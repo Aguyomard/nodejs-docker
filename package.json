@@ -20,6 +20,7 @@
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "crypto": "^1.0.1",
+    "dataloader": "^2.2.3",
     "dotenv": "^16.4.7",
     "esbuild": "^0.25.1",
     "express": "^4.21.2",

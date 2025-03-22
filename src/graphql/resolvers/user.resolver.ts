@@ -111,10 +111,8 @@ export const userResolvers = {
   },
 
   User: {
-    posts: async (parent: User, _args: unknown, { prisma }: Context) => {
-      return prisma.post.findMany({
-        where: { authorId: parent.id },
-      })
+    posts: async (parent: User, _args: unknown, { loaders }: Context) => {
+      return loaders.postsByUser.load(parent.id)
     },
   },
 }
