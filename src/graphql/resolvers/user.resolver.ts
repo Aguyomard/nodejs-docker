@@ -1,10 +1,14 @@
+import bcrypt from 'bcryptjs'
 import { Context } from '../types/context.types.js'
 import {
   User,
   UserArgs,
   UpdateUserArgs,
   CreateUserArgs,
+  AuthPayload,
+  LoginUserArgs,
 } from '../types/user.types.js'
+import jwt from 'jsonwebtoken'
 
 export const userResolvers = {
   Query: {
@@ -45,21 +49,39 @@ export const userResolvers = {
       _parent: unknown,
       { input }: CreateUserArgs,
       { prisma, pubSub }: Context
-    ) => {
+    ): Promise<AuthPayload> => {
       const existingUser = await prisma.user.findUnique({
         where: { email: input.email },
       })
+
       if (existingUser) {
         throw new Error(`User with email ${input.email} already exists`)
       }
 
+      const hashedPassword = await bcrypt.hash(input.password, 10)
+
       const newUser = await prisma.user.create({
-        data: input,
+        data: {
+          ...input,
+          password: hashedPassword,
+        },
       })
 
       pubSub.publish('userCreated', newUser)
 
-      return newUser
+      const token = jwt.sign({ userId: newUser.id }, process.env.JWT_SECRET!, {
+        expiresIn: '1h',
+      })
+
+      return {
+        user: {
+          id: newUser.id,
+          name: newUser.name,
+          email: newUser.email,
+          age: newUser.age,
+        },
+        token,
+      }
     },
 
     updateUser: async (
@@ -99,6 +121,42 @@ export const userResolvers = {
       })
 
       return true
+    },
+
+    loginUser: async (
+      _parent: unknown,
+      { input }: LoginUserArgs,
+      { prisma }: Context
+    ): Promise<AuthPayload> => {
+      const user = await prisma.user.findUnique({
+        where: { email: input.email },
+      })
+
+      if (!user) {
+        throw new Error('Invalid credentials')
+      }
+
+      const isPasswordValid = await bcrypt.compare(
+        input.password,
+        user.password
+      )
+      if (!isPasswordValid) {
+        throw new Error('Invalid credentials')
+      }
+
+      const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET!, {
+        expiresIn: '1h',
+      })
+
+      return {
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          age: user.age,
+        },
+        token,
+      }
     },
   },
 

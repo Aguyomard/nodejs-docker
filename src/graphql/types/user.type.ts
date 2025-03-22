@@ -3,6 +3,7 @@ export const userTypeDefs = `
     id: ID!
     name: String!
     email: String!
+    password: String!
     age: Int
     posts: [Post!]!
   }
@@ -10,6 +11,7 @@ export const userTypeDefs = `
   input UserInput {
     name: String!
     email: String!
+    password: String!
     age: Int
   }
 
@@ -25,8 +27,13 @@ export const userTypeDefs = `
     allUsers: [User!]!
   }
 
+  type AuthPayload {
+    user: User!
+    token: String!
+  }
+
   type Mutation {
-    createUser(input: UserInput!): User
+    createUser(input: UserInput!): AuthPayload
     updateUser(id: ID!, input: UpdateUserInput!): User
     deleteUser(id: ID!): Boolean
   }
@@ -34,4 +41,14 @@ export const userTypeDefs = `
   type Subscription {
     userCreated: User!
   }
+
+  input LoginInput {
+  email: String!
+  password: String!
+}
+
+  extend type Mutation {
+    loginUser(input: LoginInput!): AuthPayload
+  }
+
 `
