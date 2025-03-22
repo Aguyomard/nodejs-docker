@@ -15,10 +15,24 @@ export const userResolvers = {
     me: async (
       _parent: unknown,
       _args: unknown,
-      { prisma }: Context
+      { prisma, currentUser }: Context
     ): Promise<User | null> => {
-      const users = await prisma.user.findMany()
-      return users.length ? users[0] : null
+      if (!currentUser) {
+        throw new Error('Unauthorized')
+      }
+
+      const user = await prisma.user.findUnique({
+        where: { id: currentUser.id },
+      })
+
+      if (!user) return null
+
+      return {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        age: user.age,
+      }
     },
 
     user: async (
