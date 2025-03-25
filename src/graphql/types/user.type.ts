@@ -8,6 +8,21 @@ export const userTypeDefs = `
     posts: [Post!]!
   }
 
+  type PageInfo {
+    hasNextPage: Boolean!
+    endCursor: String
+  }
+
+  type UserEdge {
+    node: User!
+    cursor: String!
+  }
+
+  type UserConnection {
+    edges: [UserEdge!]!
+    pageInfo: PageInfo!
+  }
+
   input UserInput {
     name: String!
     email: String!
@@ -24,7 +39,7 @@ export const userTypeDefs = `
   type Query {
     me: User
     user(id: ID!): User
-    allUsers: [User!]!
+    allUsers(first: Int = 10, after: String): UserConnection!
   }
 
   type AuthPayload {

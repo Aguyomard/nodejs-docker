@@ -53,10 +53,42 @@ export const userResolvers = {
 
     allUsers: async (
       _parent: unknown,
-      _args: unknown,
+      { first = 10, after }: { first?: number; after?: string },
       { prisma }: Context
-    ): Promise<User[]> => {
-      return prisma.user.findMany()
+    ): Promise<{
+      edges: { node: User; cursor: string }[]
+      pageInfo: { hasNextPage: boolean; endCursor: string | null }
+    }> => {
+      const take = first
+      const cursor = after ? { id: after } : undefined
+
+      const users = await prisma.user.findMany({
+        take: take + 1,
+        skip: after ? 1 : 0,
+        cursor,
+        orderBy: { id: 'asc' },
+      })
+
+      const hasNextPage = users.length > first
+      const usersToReturn = hasNextPage ? users.slice(0, -1) : users
+
+      const edges = usersToReturn.map((user) => ({
+        node: user,
+        cursor: user.id,
+      }))
+
+      const endCursor =
+        usersToReturn.length > 0
+          ? usersToReturn[usersToReturn.length - 1].id
+          : null
+
+      return {
+        edges,
+        pageInfo: {
+          hasNextPage,
+          endCursor,
+        },
+      }
     },
   },
 
