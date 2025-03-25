@@ -10,6 +10,7 @@ import {
 } from '../types/user.types.js'
 import jwt from 'jsonwebtoken'
 import { getAuthenticatedUserId } from '../../utils/auth.utils.js'
+import { resolve } from 'path'
 
 export const userResolvers = {
   Query: {
@@ -144,22 +145,21 @@ export const userResolvers = {
       context: Context
     ): Promise<boolean> => {
       const userId = getAuthenticatedUserId(context)
-    
+
       const existingUser = await context.prisma.user.findUnique({
         where: { id: userId },
       })
-    
+
       if (!existingUser) {
         throw new Error('User not found')
       }
-    
+
       await context.prisma.user.delete({
         where: { id: userId },
       })
-    
+
       return true
-    }
-    
+    },
 
     loginUser: async (
       _parent: unknown,
@@ -209,6 +209,19 @@ export const userResolvers = {
   User: {
     posts: async (parent: User, _args: unknown, { loaders }: Context) => {
       return loaders.postsByUser.load(parent.id)
+    },
+
+    email: {
+      // fragment: 'fragment userId on User { id }',
+      resolve: async (parent: User, _args: unknown, context: Context) => {
+        const currentUserId = getAuthenticatedUserId(context, false)
+
+        if (currentUserId === parent.id) {
+          return parent.email
+        }
+
+        return null
+      },
     },
   },
 }

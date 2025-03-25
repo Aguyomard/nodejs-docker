@@ -2,7 +2,7 @@ export const userTypeDefs = `
   type User {
     id: ID!
     name: String!
-    email: String!
+    email: String
     password: String!
     age: Int
     posts: [Post!]!
@@ -36,6 +36,7 @@ export const userTypeDefs = `
     createUser(input: UserInput!): AuthPayload
     updateUser(id: ID!, input: UpdateUserInput!): User
     deleteUser(id: ID!): Boolean
+    deleteMe: Boolean!
   }
 
   type Subscription {
