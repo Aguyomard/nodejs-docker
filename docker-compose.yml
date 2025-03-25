@@ -3,12 +3,22 @@ services:
     build: .
     ports:
       - '3000:3000'
+      - '9229:9229'
     volumes:
       - .:/app
       # - /app/node_modules
     env_file:
       - .env
-    command: ['nodemon', '--ext', 'ts', '--exec', 'tsx', 'src/server.ts']
+    command:
+      [
+        'nodemon',
+        '--inspect=0.0.0.0:9229',
+        '--ext',
+        'ts',
+        '--exec',
+        'tsx',
+        'src/server.ts',
+      ]
     depends_on:
       - postgres
       - mongo
