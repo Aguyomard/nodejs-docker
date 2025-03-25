@@ -9,6 +9,7 @@ import {
   LoginUserArgs,
 } from '../types/user.types.js'
 import jwt from 'jsonwebtoken'
+import { getAuthenticatedUserId } from '../../utils/auth.utils.js'
 
 export const userResolvers = {
   Query: {
@@ -137,6 +138,29 @@ export const userResolvers = {
       return true
     },
 
+    deleteMe: async (
+      _parent: unknown,
+      _args: unknown,
+      context: Context
+    ): Promise<boolean> => {
+      const userId = getAuthenticatedUserId(context)
+    
+      const existingUser = await context.prisma.user.findUnique({
+        where: { id: userId },
+      })
+    
+      if (!existingUser) {
+        throw new Error('User not found')
+      }
+    
+      await context.prisma.user.delete({
+        where: { id: userId },
+      })
+    
+      return true
+    }
+    
+
     loginUser: async (
       _parent: unknown,
       { input }: LoginUserArgs,
@@ -159,7 +183,7 @@ export const userResolvers = {
       }
 
       const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET!, {
-        expiresIn: '1h',
+        expiresIn: '10h',
       })
 
       return {
