@@ -41,9 +41,15 @@ const USERS_QUERY = gql`
 
 const FIRST = 2
 
-const { result, loading, error, fetchMore } = useQuery(USERS_QUERY, {
-  first: FIRST,
-})
+const { result, loading, error, fetchMore } = useQuery(
+  USERS_QUERY,
+  {
+    first: FIRST,
+  },
+  {
+    pollInterval: 5000000, // refresh auto
+  },
+)
 
 const users = ref<any[]>([])
 const pageInfo = ref({
