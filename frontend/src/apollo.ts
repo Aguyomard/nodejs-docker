@@ -1,4 +1,3 @@
-// src/apollo.ts
 import { ApolloClient, InMemoryCache, HttpLink } from '@apollo/client/core'
 
 const httpLink = new HttpLink({

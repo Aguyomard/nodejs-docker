@@ -10,7 +10,6 @@ import {
 } from '../types/user.types.js'
 import jwt from 'jsonwebtoken'
 import { getAuthenticatedUserId } from '../../utils/auth.utils.js'
-import { resolve } from 'path'
 
 export const userResolvers = {
   Query: {
