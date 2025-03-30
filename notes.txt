@@ -28,3 +28,6 @@ query {
     age
   }
 }
+
+
+npm run prisma:docker:migrate:dev -- --name test

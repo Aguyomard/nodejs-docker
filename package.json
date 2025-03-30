@@ -10,9 +10,13 @@
     "format-fix": "prettier --write .",
     "format": "prettier --check .",
     "type-check": "tsc --noEmit",
-    "test": "jest",
+    "test": "dotenv -e .env.test -- jest",
     "test:watch": "jest --watchAll",
-    "test:docker": "docker compose exec app npm run test"
+    "test:docker": "docker compose exec app npm run test",
+    "prisma:docker:migrate:dev": "docker compose exec app npx prisma migrate dev",
+    "prisma:docker:migrate:deploy": "docker compose exec app npx prisma migrate deploy",
+    "prisma:docker:migrate:test": "docker compose exec app ./scripts/prisma-migrate-test.sh",
+    "db:test:reset": "docker compose exec app ./scripts/prisma-reset-test.sh"
   },
   "keywords": [],
   "author": "",
@@ -51,6 +55,7 @@
     "@types/node": "^22.13.1",
     "@types/nodemailer": "^6.4.17",
     "@types/pg": "^8.11.11",
+    "dotenv-cli": "^8.0.0",
     "eslint": "^9.20.0",
     "eslint-config-prettier": "^10.0.1",
     "eslint-plugin-prettier": "^5.2.3",
